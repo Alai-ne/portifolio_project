@@ -5,7 +5,14 @@ const sanitizeHTML = require('sanitize-html')
 const bcrypt = require("bcrypt")
 const cookieParser = require('cookie-parser')
 const express = require("express")
-const db = require("better-sqlite3")("ourAPP.db")
+const path = require("path");
+
+// Use a dynamic path for the SQLite database
+const dbPath = process.env.NODE_ENV === "production"
+    ? path.join(process.env.TMPDIR || "/tmp", "ourApp.db") // Use temporary directory for production
+    : path.join(__dirname, "ourApp.db"); // Use local directory for development
+
+const db = require("better-sqlite3")(dbPath);
 db.pragma("journal_mode = WAL")
 
 // database setup here
@@ -41,9 +48,12 @@ createTables()
 
 const app = express()
 
+// Set views directory explicitly
+app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs")
 app.use(express.urlencoded({extended: false}))
-app.use(express.static("public"))
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, "public")));
 app.use(cookieParser())
 
 app.use(function (req, res, next) {
